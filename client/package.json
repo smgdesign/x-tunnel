@@ -1,0 +1,50 @@
+{
+  "name": "x-tunnel",
+  "description": "Port forward without the forwarding",
+  "version": "1.3.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/smgdesign/x-tunnel.git"
+  },
+  "author": "Rich W <richard@smg.digital>",
+  "contributors": [
+    "Rich W <richard@smg.digital>",
+    "Roman Shtylman <shtylman@gmail.com>",
+    "Gert Hengeveld <gert@hichroma.com>",
+    "Tom Coleman <tom@hichroma.com>"
+  ],
+  "main": "./dist/src/xtunnel.js",
+  "bin": {
+    "xt": "dist/src/bin/xt.js"
+  },
+  "scripts": {
+    "test": "mocha --reporter list --timeout 60000 -- *.spec.js",
+    "build": "tsc",
+    "predev:link": "npm unlink xt",
+    "dev:link": "npm link",
+    "predev": "npm run build",
+    "dev": "node dist/src/bin/xt.js",
+    "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix"
+  },
+  "dependencies": {
+    "axios": "0.21.4",
+    "debug": "4.3.2",
+    "dotenv": "16.0.1",
+    "localenv": "0.2.2",
+    "openurl": "1.1.1",
+    "yargs": "17.5.1"
+  },
+  "devDependencies": {
+    "@types/debug": "4.1.7",
+    "@types/node": "17.0.38",
+    "@types/openurl": "1.0.0",
+    "@types/yargs": "17.0.10",
+    "mocha": "~9.1.1",
+    "ts-node": "10.8.0",
+    "typescript": "4.7.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
