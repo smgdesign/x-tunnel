@@ -17,4 +17,4 @@ COPY --from=build /app/.env /app/
 
 RUN yarn install --production && yarn cache clean
 COPY --from=build /app/dist /app/dist
-RUN tar -zcvf /app x-tunnel.tar.gz
+RUN tar -zcvf /x-tunnel.tar.gz /app
