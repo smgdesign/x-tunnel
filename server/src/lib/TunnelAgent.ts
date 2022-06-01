@@ -8,7 +8,8 @@ const DEFAULT_MAX_SOCKETS = 10;
 
 export type TunnelAgentOpts = {
     clientId?: string;
-    maxTcpSockets?: number
+    maxTcpSockets?: number;
+    requestedPort?: number;
 }
 
 export interface TunnelAgent extends Agent, EventEmitter {}
@@ -22,6 +23,7 @@ export class TunnelAgent extends Agent {
     debug: Debug.Debugger;
     connectedSockets: number;
     maxTcpSockets: any;
+    requestedPort: number;
     server: net.Server;
     started: boolean;
     closed: boolean;
@@ -45,6 +47,7 @@ export class TunnelAgent extends Agent {
         // track maximum allowed sockets
         this.connectedSockets = 0;
         this.maxTcpSockets = options.maxTcpSockets || DEFAULT_MAX_SOCKETS;
+        this.requestedPort = options.requestedPort;
 
         // new tcp server to service requests for this client
         this.server = net.createServer();
@@ -78,7 +81,7 @@ export class TunnelAgent extends Agent {
         });
 
         return new Promise((resolve) => {
-            server.listen(() => {
+            const listenerCb = () => {
                 const address = server.address();
                 let port: number = 0;
                 if (typeof address === 'string') {
@@ -89,10 +92,15 @@ export class TunnelAgent extends Agent {
                 this.debug('tcp server listening on port: %d', port);
 
                 resolve({
-                    // port for lt client tcp connections
-                    port: port,
+                    // port for x-tunnel client tcp connections
+                    port,
                 });
-            });
+            };
+            if (this.requestedPort) {
+                server.listen(this.requestedPort, listenerCb);
+            } else {
+                server.listen(listenerCb);
+            }
         });
     }
 

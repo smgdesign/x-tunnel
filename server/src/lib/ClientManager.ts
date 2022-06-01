@@ -12,6 +12,8 @@ export type ClientInfo = {
     url?: string;
 }
 
+export const PORT_RANGE = [18080, 19080];
+
 // Manage sets of clients
 //
 // A client is a "user session" established to service a remote x-tunnel client
@@ -21,8 +23,13 @@ class ClientManager {
     stats: { tunnels: number; };
     debug: Debug.Debugger;
     graceTimeout: any;
+    availablePorts: number[];
     constructor(opt: CreateServerOpt) {
         this.opt = opt || {};
+        this.availablePorts = [];
+        for (let cP = PORT_RANGE[0]; cP < PORT_RANGE[1]; cP++) {
+            this.availablePorts.push(cP);
+        }
 
         // id -> client instance
         this.clients = new Map();
@@ -52,9 +59,12 @@ class ClientManager {
 
         const maxSockets = this.opt.max_tcp_sockets;
         this.debug('Creating Tunnel Agent for %s', id);
+        const requestingPort = this.availablePorts.shift();
+        this.debug('Requesting port %d', requestingPort);
         const agent = new TunnelAgent({
             clientId: id,
             maxTcpSockets: 10,
+            requestedPort: requestingPort,
         });
         this.debug('Created Tunnel Agent for %s', id);
         this.debug('Creating Client for %s', id);
@@ -70,6 +80,7 @@ class ClientManager {
 
         client.once('close', () => {
             this.removeClient(id);
+            this.availablePorts.push(requestingPort);
         });
 
         // try/catch used here to remove client id
@@ -84,6 +95,7 @@ class ClientManager {
         }
         catch (err) {
             this.removeClient(id);
+            this.availablePorts.push(requestingPort);
             // rethrow error for upstream to handle
             throw err;
         }
