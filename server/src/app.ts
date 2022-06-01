@@ -1,8 +1,9 @@
-import log from 'book';
 import Koa from 'koa';
 import tldjs from 'tldjs';
 import Debug from 'debug';
+import fs from 'fs';
 import http from 'http';
+import https from 'https';
 import { hri } from 'human-readable-ids';
 import Router from 'koa-router';
 
@@ -15,9 +16,17 @@ export type CreateServerOpt = {
     secure?: boolean;
     domain?: string;
     landing?: string;
+    ports?: {
+        http?: number;
+        https?: number;
+    };
+    cert?: {
+        key?: string;
+        cert?: string;
+    }
 }
 
-export const CreateServer = (opt: CreateServerOpt) => {
+export const CreateServers = (opt: CreateServerOpt) => {
     opt = opt || {};
 
     const validHosts = (opt.domain) ? [opt.domain] : undefined;
@@ -120,8 +129,22 @@ export const CreateServer = (opt: CreateServerOpt) => {
         ctx.body = info;
         return;
     });
-
-    const server = http.createServer();
+    let server: http.Server | https.Server;
+    let secondServer: http.Server
+    if (opt.secure) {
+        const ssl = {
+            key: fs.readFileSync(opt.cert.key).toString(),
+            cert: fs.readFileSync(opt.cert.cert).toString(),
+        };
+        server = https.createServer(ssl);
+        secondServer = http.createServer();
+        secondServer.on('request', (req, res) => {
+            res.writeHead(301, { "Location": "https://" + req.headers['host'].replace(`${opt?.ports?.http}`, `${opt?.ports?.https}`) + req.url });
+            res.end();
+        });
+    } else {
+        server = http.createServer();
+    }
 
     const appCallback = app.callback();
 
@@ -172,5 +195,5 @@ export const CreateServer = (opt: CreateServerOpt) => {
         client.handleUpgrade(req, socket);
     });
 
-    return server;
+    return [server, secondServer];
 };

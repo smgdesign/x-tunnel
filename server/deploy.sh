@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=v1.3.1.0
+VERSION=v1.3.2.0
 TGT=/opt/x-tunnel
 SSH=root@rack04.vpn.smg.systems
 docker build -t smgdesign/x-tunnel:${VERSION} .
@@ -16,5 +16,5 @@ pm2 stop all
 rm ${TGT}/app
 ln -s ${TGT}/${VERSION}/app ${TGT}/app
 cd ${TGT}/app
-yarn start --domain x-tunnel.x-smg.com --port 80
+yarn start --domain x-tunnel.x-smg.com --secure --key /etc/letsencrypt/live/x-tunnel.x-smg.com/privkey.pem --cert /etc/letsencrypt/live/x-tunnel.x-smg.com/fullchain.pem
 EOF

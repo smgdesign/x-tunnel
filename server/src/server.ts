@@ -6,7 +6,7 @@ import optimist from 'optimist';
 import log from 'book';
 import Debug from 'debug';
 
-import { CreateServer } from './app';
+import { CreateServers } from './app';
 
 const debug = Debug('x-tunnel');
 
@@ -20,6 +20,10 @@ const argv = optimist
         default: '80',
         describe: 'listen on this port for outside requests'
     })
+    .options('s-port', {
+        default: '443',
+        describe: 'listen on this port for outside requests securely'
+    })
     .options('address', {
         default: '0.0.0.0',
         describe: 'IP address to bind to'
@@ -31,6 +35,12 @@ const argv = optimist
         default: 10,
         describe: 'maximum number of tcp sockets each client is allowed to establish at one time (the tunnels)'
     })
+    .options('cert', {
+        describe: 'Certificate file location'
+    })
+    .options('key', {
+        describe: 'Certificate key file location'
+    })
     .argv;
 
 if (argv.help) {
@@ -38,15 +48,34 @@ if (argv.help) {
     process.exit();
 }
 
-const server = CreateServer({
+const servers = CreateServers({
     max_tcp_sockets: argv['max-sockets'],
     secure: argv.secure,
     domain: argv.domain,
+    ports: {
+        http: argv.port,
+        https: argv['s-port'],
+    },
+    cert: {
+        cert: argv.cert,
+        key: argv.key,
+    },
 });
 
-server.listen(argv.port, argv.address, () => {
-    debug('server listening on port: %d', argv.port);
-});
+if (argv.secure) {
+    servers[0].listen(argv['s-port'], argv.address, () => {
+        debug('secure server listening on port: %d', argv['s-port']);
+    });
+    servers[0].listen(argv.port, argv.address, () => {
+        debug('server listening on port: %d', argv.port);
+    });
+} else {
+    servers[0].listen(argv.port, argv.address, () => {
+        debug('server listening on port: %d', argv.port);
+    });
+}
+
+
 
 process.on('SIGINT', () => {
     process.exit();
